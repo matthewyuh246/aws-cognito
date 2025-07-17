@@ -11,6 +11,7 @@ type User struct {
 	Email string `json:"email" gorm:"uniqueIndex;not null"`
 	Username string `json:"username" gorm:"uniqueIndex;not null"`
 	Name string `json:"name"`
+	Picture string `json:"picture"`
 	Provider string `json:"provider" gorm:"not null"`
 	SubjectID string `json:"subject_id" gorm:"not null"`
 	CreatedAt time.Time `json:"created_at"`
