@@ -15,7 +15,7 @@ func GetEnv(key, defaultValue string) string {
 }
 
 func LoadEnvFile() {
-	env := GetEnv("GO_ENV", "deveplopment")
+	env := GetEnv("GO_ENV", "development")
 	if env == "development" {
 		if err := godotenv.Load(); err != nil {
 			log.Printf("Warning: .env file not found or could not be loaded: %v", err)
