@@ -1,10 +1,6 @@
-package aws
+package awsconfig
 
 import (
-	"log"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/matthewyuh246/aws-cognito/pkg/utils"
 )
 
@@ -16,18 +12,7 @@ type Config struct {
 	JWTSecret string
 }
 
-func initAWS(region string) *session.Session {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
-	})
-	if err != nil {
-		log.Fatalf("Failed to create AWS session: %v", err)
-	}
-
-	return sess
-}
-
-func loadCognitoConfig() *Config {
+func LoadCognitoConfig() *Config {
 	return &Config{
 		Port: utils.GetEnv("PORT", "8080"),
 		AWSRegion: utils.GetEnv("AWS_REGION", ""),
