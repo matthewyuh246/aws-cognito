@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/matthewyuh246/aws-cognito/pkg/utils"
 )
 
@@ -20,7 +20,7 @@ func NewCORSConifg() *CORSConfig {
 	}
 }
 
-func SetupOCRS(config *CORSConfig) echo.MiddlewareFunc {
+func SetupCORS(config *CORSConfig) echo.MiddlewareFunc {
 	return middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: config.AllowOrigins,
 		AllowMethods: config.AllowMethods,
