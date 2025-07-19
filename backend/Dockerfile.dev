@@ -1,0 +1,33 @@
+# 開発環境用 Dockerfile
+FROM golang:1.24.2-alpine
+
+# 開発に必要なパッケージをインストール
+RUN apk add --no-cache git ca-certificates curl build-base
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# Air（ホットリロード）をインストール（Go 1.24対応）
+RUN go install github.com/air-verse/air@latest
+
+# Delve デバッガーをインストール
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+# Go モジュールファイルをコピー
+COPY go.mod go.sum ./
+
+# 依存関係をダウンロード
+RUN go mod download
+
+# ソースコードをコピー（開発時はボリュームマウントを使用）
+COPY . .
+
+# 開発用の tmp ディレクトリを作成
+RUN mkdir -p tmp
+
+# ポートを公開（アプリケーション用とデバッグ用）
+EXPOSE 8080
+EXPOSE 40000
+
+# Air を使用してホットリロードで起動
+CMD ["air", "-c", ".air.toml"] 
