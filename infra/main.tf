@@ -1,6 +1,6 @@
 provider "aws" {
-    region = "ap-northeast-1"
-    profile = "admin"
+  region  = "ap-northeast-1"
+  profile = "admin"
 }
 
 # data
@@ -8,11 +8,11 @@ data "aws_region" "current" {}
 
 # variables
 variable "project" {
-    type = string
+  type = string
 }
 
 variable "environment" {
-    type = string
+  type = string
 }
 
 #　ローカル変数(= 再利用可能な値)
