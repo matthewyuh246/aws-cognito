@@ -1,6 +1,3 @@
-# ===========================================
-# Cognito Outputs
-# ===========================================
 
 output "user_pool_id" {
   description = "Cognito User Pool ID"
