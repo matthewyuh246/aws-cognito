@@ -1,30 +1,85 @@
+# ===========================================
+# IAM Roles for Cognito Identity Pool
+# ===========================================
 
-output "user_pool_id" {
-  description = "Cognito User Pool ID"
-  value       = aws_cognito_user_pool.main.id
+# IAM Role for authenticated users
+resource "aws_iam_role" "authenticated" {
+  name = "Cognito_${aws_cognito_identity_pool.main.identity_pool_name}_Auth_Role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = "cognito-identity.amazonaws.com"
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "cognito-identity.amazonaws.com:aud" = aws_cognito_identity_pool.main.id
+          }
+          "ForAnyValue:StringLike" = {
+            "cognito-identity.amazonaws.com:amr" = "authenticated"
+          }
+        }
+      }
+    ]
+  })
 }
 
-output "user_pool_client_id" {
-  description = "Cognito User Pool Client ID"
-  value       = aws_cognito_user_pool_client.main.id
+# IAM Role Policy for authenticated users
+resource "aws_iam_role_policy" "authenticated" {
+  name = "authenticated_policy"
+  role = aws_iam_role.authenticated.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cognito-sync:*",
+          "cognito-identity:*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
 
-output "identity_pool_id" {
-  description = "Cognito Identity Pool ID"
-  value       = aws_cognito_identity_pool.main.id
+# IAM Role for unauthenticated users
+resource "aws_iam_role" "unauthenticated" {
+  name = "Cognito_${aws_cognito_identity_pool.main.identity_pool_name}_Unauth_Role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = "cognito-identity.amazonaws.com"
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "cognito-identity.amazonaws.com:aud" = aws_cognito_identity_pool.main.id
+          }
+          "ForAnyValue:StringLike" = {
+            "cognito-identity.amazonaws.com:amr" = "unauthenticated"
+          }
+        }
+      }
+    ]
+  })
 }
 
-output "user_pool_endpoint" {
-  description = "Cognito User Pool Endpoint"
-  value       = aws_cognito_user_pool.main.endpoint
-}
+# Attach roles to identity pool
+resource "aws_cognito_identity_pool_roles_attachment" "main" {
+  identity_pool_id = aws_cognito_identity_pool.main.id
 
-output "user_pool_domain" {
-  description = "Cognito User Pool Domain"
-  value       = aws_cognito_user_pool_domain.main.domain
-}
-
-output "cognito_domain_url" {
-  description = "Cognito Domain URL"
-  value       = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com"
+  roles = {
+    "authenticated"   = aws_iam_role.authenticated.arn
+    "unauthenticated" = aws_iam_role.unauthenticated.arn
+  }
 } 
