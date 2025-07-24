@@ -1,7 +1,3 @@
-# ===========================================
-# IAM Roles for Cognito Identity Pool
-# ===========================================
-
 # IAM Role for authenticated users
 resource "aws_iam_role" "authenticated" {
   name = "Cognito_${aws_cognito_identity_pool.main.identity_pool_name}_Auth_Role"
