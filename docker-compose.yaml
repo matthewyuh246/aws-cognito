@@ -1,0 +1,90 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: cognito-template
+    environment:
+      POSTGRES_DB: template
+      POSTGRES_USER: template
+      POSTGRES_PASSWORD: template
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5445:5432"
+    networks:
+      - template
+    restart: always
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: social-login-backend
+    environment:
+      - PORT=8080
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=template
+      - POSTGRES_USER=template
+      - POSTGRES_PW=template
+      - POSTGRES_SSLMODE=disable
+      - AWS_REGION=us-east-1
+      - USER_POOL_ID=${USER_POOL_ID}
+      - USER_POOL_CLIENT_ID=${USER_POOL_CLIENT_ID}
+      - COGNITO_DOMAIN_URL=${COGNITO_DOMAIN_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8080:8080"
+    networks:
+      - template
+    restart: unless-stopped
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: social-login-frontend
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api/v1
+      - VITE_COGNITO_DOMAIN_URL=${COGNITO_DOMAIN_URL}
+      - VITE_COGNITO_CLIENT_ID=${USER_POOL_CLIENT_ID}
+      - VITE_COGNITO_USER_POOL_ID=${USER_POOL_ID}
+      - VITE_AWS_REGION=${AWS_REGION}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    networks:
+      - template
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: social-login-nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - template
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  template:
+    driver: bridge
