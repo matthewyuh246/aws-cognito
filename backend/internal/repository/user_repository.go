@@ -11,6 +11,7 @@ import (
 type IUserRepository interface {
 	createUser(ctx context.Context, user *domain.User) error
 	getUserByEmail(ctx context.Context, email string) (*domain.User, error)
+	getUserByID(ctx context.Context, id uint) (*domain.User, error) 
 }
 
 type userRepository struct {
@@ -28,6 +29,18 @@ func (r *userRepository) createUser(ctx context.Context, user *domain.User) erro
 func (r *userRepository) getUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var user domain.User
 	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *userRepository) getUserByID(ctx context.Context, id uint) (*domain.User, error) {
+	var user domain.User
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
