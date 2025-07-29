@@ -12,6 +12,7 @@ type IUserRepository interface {
 	createUser(ctx context.Context, user *domain.User) error
 	getUserByEmail(ctx context.Context, email string) (*domain.User, error)
 	getUserByID(ctx context.Context, id uint) (*domain.User, error) 
+	UpdateUser(ctx context.Context, user *domain.User) error
 }
 
 type userRepository struct {
@@ -48,4 +49,8 @@ func (r *userRepository) getUserByID(ctx context.Context, id uint) (*domain.User
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *userRepository) UpdateUser(ctx context.Context, user *domain.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
 }
