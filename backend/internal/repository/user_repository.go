@@ -13,6 +13,7 @@ type IUserRepository interface {
 	getUserByEmail(ctx context.Context, email string) (*domain.User, error)
 	getUserByID(ctx context.Context, id uint) (*domain.User, error) 
 	UpdateUser(ctx context.Context, user *domain.User) error
+	getUserByProviderAndSubjectID(ctx context.Context, provider, subjectID string) (*domain.User, error)
 }
 
 type userRepository struct {
@@ -42,6 +43,18 @@ func (r *userRepository) getUserByEmail(ctx context.Context, email string) (*dom
 func (r *userRepository) getUserByID(ctx context.Context, id uint) (*domain.User, error) {
 	var user domain.User
 	err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *userRepository) getUserByProviderAndSubjectID(ctx context.Context, provider, subjectID string) (*domain.User, error) {
+	var user domain.User
+	err := r.db.WithContext(ctx).Where("provider = ? AND subject_id = ?", provider, subjectID).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
