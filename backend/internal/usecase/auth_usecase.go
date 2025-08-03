@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -52,6 +53,9 @@ func (u *authUsecase) LoginWithSocialProvider(ctx context.Context, provider, aut
 	}
 
 	userInfo, err := u.parseIDToken(tokens.IdToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse ID token: %w", err)
+	}
 }
 
 func (u *authUsecase) exchangeCodeforTokens(authCode string) (*domain.AuthTokens, error) {
@@ -110,4 +114,92 @@ func (u *authUsecase) exchangeCodeforTokens(authCode string) (*domain.AuthTokens
 		IdToken: tokenResponse.IdToken,
 		ExpiresIn: tokenResponse.ExpiresIn,
 	}, nil
+}
+
+func (u *authUsecase) parseIDToken(idToken string) (map[string]interface{}, error) {
+	if idToken == "mock_id_token" {
+		log.Printf("DEBUG: Using mock ID token for development")
+		return map[string]interface{}{
+			"email": "test@example.com",
+			"username": "testuser",
+			"name": "Test User",
+			"picture": "https://via.placeholder.com/150",
+			"sub": "mock-user-id-123",
+		}, nil
+	}
+
+	if idToken != "dummy_id_token" {
+		parts := strings.Split(idToken, ".")
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("invalid JWT token format")
+		}
+
+		payload := parts[1]
+
+		if len(payload)%4 != 0 {
+			payload += strings.Repeat("=", 4-len(payload)%4)
+		}
+
+		decoded, err := base64.URLEncoding.DecodeString(payload)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode JWT payload: %w", err)
+		}
+
+		var claims map[string]interface{}
+		if err := json.Unmarshal(decoded, &claims); err != nil {
+			return nil, fmt.Errorf("failed to parse JWT claims: %w", err)
+		}
+
+		log.Printf("DEBUG: ID Token Claims: %+v", claims)
+
+		email, _ := claims["email"].(string)
+		name, _ := claims["name"].(string)
+		picture, _ := claims["picture"].(string)
+		sub, _ := claims["sub"].(string)
+
+		if name == "" {
+			givenName, _ := claims["given_name"].(string)
+			familyName, _ := claims["family_name"].(string)
+			if familyName != "" || familyName != "" {
+				name = strings.TrimSpace(givenName + " " + familyName)
+			}
+		}
+
+		log.Printf("DEBUG: Extracted email: %s", email)
+		log.Printf("DEBUG: Extracted name: %s", name)
+		log.Printf("DEBUG: Extracted picture: %s", picture)
+		log.Printf("DEBUG: Extracted sub: %s", sub)
+
+		if picture == "" {
+			if avatar, ok := claims["avatar_url"].(string); ok {
+				picture = avatar
+				log.Printf("DEBUG: Using avatar_url as picture: %s", picture)
+			} else if photo, ok := claims["photo"].(string); ok {
+				picture = photo
+				log.Printf("DEBUG: Using photo as picture: %s", picture)
+			} else if profileImage, ok := claims["profile_image_url"].(string); ok {
+				picture = profileImage
+				log.Printf("DEBUG: Using profile_image_url as picture: %s", picture)
+			}
+		}
+
+		username := name
+		if username == "" {
+			username = strings.Split(email, "@")[0]
+		}
+
+		userInfo := map[string]interface{}{
+			"email": email,
+			"username": username,
+			"name": name,
+			"picture": picture,
+			"sub": sub,
+		}
+
+		log.Printf("DEBUG: Final userInfo: %+v", userInfo)
+
+		return userInfo, nil
+	}
+
+	return nil, fmt.Errorf("invalid ID token: dummy token not allowed")
 }
