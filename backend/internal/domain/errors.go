@@ -36,3 +36,28 @@ func (e *AuthError) Error() string {
 	}
 	return fmt.Sprintf("%s: %s", e.Type, e.Message)
 }
+
+func (e *AuthError) Unwrap() error {
+	return e.Err
+}
+
+func (e *AuthError) IsRetriable() bool {
+	return (e.Code >= 500 && e.Code < 600) || e.Type == AuthErrorTypeNetwork
+}
+
+func (e *AuthError) UserMessage() string {
+	switch e.Type {
+	case AuthErrorTypeConfig:
+		return "システム設定エラーが発生しました"
+	case AuthErrorTypeNetwork:
+		return "ネットワーク接続に失敗しました"
+	case AuthErrorTypeClient:
+		return "リクエストが正しくありません"
+	case AuthErrorTypeServer:
+		return "認証サーバーエラーが発生しました"
+	case AuthErrorTypeSecurity:
+		return "セキュリティエラーが発生しました"
+	default:
+		return "認証に失敗しました"
+	}
+}
