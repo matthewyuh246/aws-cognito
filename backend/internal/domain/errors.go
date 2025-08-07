@@ -1,12 +1,15 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+)
 
+// 認証に関するドメインエラー
 type AuthError struct {
-	Type AuthErrorType
-	Code int
+	Type    AuthErrorType
+	Code    int
 	Message string
-	Err error
+	Err     error
 }
 
 type AuthErrorType string
@@ -22,10 +25,18 @@ const (
 	AuthErrorTypeParse       AuthErrorType = "parse_error"
 )
 
+func NewAuthError(errorType AuthErrorType, message string, err error) *AuthError {
+	return &AuthError{
+		Type:    errorType,
+		Message: message,
+		Err:     err,
+	}
+}
+
 func NewAuthErrorWithCode(errorType AuthErrorType, code int, message string) *AuthError {
 	return &AuthError{
-		Type: errorType,
-		Code: code,
+		Type:    errorType,
+		Code:    code,
 		Message: message,
 	}
 }
@@ -45,6 +56,7 @@ func (e *AuthError) IsRetriable() bool {
 	return (e.Code >= 500 && e.Code < 600) || e.Type == AuthErrorTypeNetwork
 }
 
+// ユーザー向けエラーメッセージ
 func (e *AuthError) UserMessage() string {
 	switch e.Type {
 	case AuthErrorTypeConfig:
