@@ -3,6 +3,7 @@ package utils
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -23,4 +24,19 @@ func LoadEnvFile() {
 			log.Println("Loaded .env file for development environment")
 		}
 	}
+}
+
+// MaskSensitiveData - 機密データをマスクする
+func MaskSensitiveData(data string, prefixLen, suffixLen int) string {
+	runes := []rune(data)
+	length := len(runes)
+	
+	if length <= (prefixLen + suffixLen + 3) {
+		return strings.Repeat("*", length)
+	}
+	
+	prefix := string(runes[:prefixLen])
+	suffix := string(runes[length-suffixLen:])
+	
+	return prefix + "***" + suffix
 }
