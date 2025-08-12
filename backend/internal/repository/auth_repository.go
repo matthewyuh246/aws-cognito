@@ -20,6 +20,7 @@ type IAuthRepository interface {
 	ExchangeCodeForTokens(ctx context.Context, authCode string) (*domain.AuthTokens, error)
 }
 
+// 
 type authRepository struct {
 	httpClient       *httpclient.Client
 	logger           *logger.Logger
